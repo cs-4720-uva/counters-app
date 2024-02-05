@@ -1,48 +1,92 @@
 package edu.virginia.cs.countersapp
 
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
-class CounterViewModel: ViewModel() {
-    private var _counters = MutableStateFlow<List<Counter>>(emptyList())
-    val counters = _counters.asStateFlow()
+class CounterViewModel(
+    private val counterRepository: CounterRepository
+): ViewModel() {
+    private val _countersList = mutableStateListOf<Counter>()
+    val countersList: List<Counter> = _countersList
 
     init {
         viewModelScope.launch {
-            _counters.emit(
-                CounterSample.data
-            )
+            counterRepository.getAllCounters().collect() {counters ->
+                _countersList.clear()
+                _countersList.addAll(counters)
+            }
         }
     }
 
-    fun add(item: Counter) {
-        _counters.value = _counters.value + item
+    private fun getCountersFromDatabase() = counterRepository.getAllCounters()
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(),
+                mutableListOf()
+            )
+
+    fun get(index: Int): Counter {
+        return _countersList[index]
+    }
+
+    fun add(newCounter: Counter) {
+        viewModelScope.launch {
+            counterRepository.insert(newCounter)
+        }
     }
 
     fun addByName(name: String) {
-        val nextId = _counters.value
-            .maxBy { counter -> counter.id }
-            .id + 1
-        val newCounter = Counter(nextId, name)
-        _counters.value = _counters.value + newCounter
+        val newCounter = Counter(name)
+        add(newCounter)
     }
 
-    fun remove(item: Counter) {
-        _counters.value = _counters.value - item
+    fun remove(counter: Counter) {
+        _countersList.remove(counter)
+        viewModelScope.launch {
+            counterRepository.delete(counter)
+        }
     }
 
-    fun update(index: Int, newItem: Counter) {
-        val newList = _counters.value.toMutableList()
-        newList[index] = newItem
-        _counters.value = newList
+    fun increment(counter: Counter) {
+        counter.increment()
+        viewModelScope.launch {
+            counterRepository.updateAll(counter)
+        }
+    }
+
+    fun decrement(counter: Counter) {
+        counter.decrement()
+        viewModelScope.launch {
+            counterRepository.updateAll(counter)
+        }
+    }
+
+    fun reset(counter: Counter) {
+        counter.reset()
+        viewModelScope.launch {
+            counterRepository.updateAll(counter)
+        }
     }
 }
+
+class CounterViewModelFactory(
+    private val repository: CounterRepository
+): ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(CounterViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return CounterViewModel(repository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
+}
+

@@ -1,17 +1,17 @@
 package edu.virginia.cs.countersapp
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 
-class Counter(
-    val id: Int,
-    private val initialName: String,
-    private val initialValue: Int = 0
+
+@Entity(tableName = "counters")
+data class Counter(
+    @ColumnInfo(name = "name") var name: String,
+    @ColumnInfo(name = "value") var value: Int = 0,
+    @PrimaryKey(autoGenerate = true) val id: Int = 0
 ) {
-    var name: String by mutableStateOf(initialName)
-    var value: Int by mutableIntStateOf(initialValue)
+
     fun increment(amount: Int = 1) {
         value += amount
     }

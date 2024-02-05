@@ -3,7 +3,6 @@ package edu.virginia.cs.countersapp
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,9 +10,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -30,40 +29,61 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import edu.virginia.cs.countersapp.ui.theme.CountersAppTheme
 
 
 class MainActivity : ComponentActivity() {
+
+    val database by lazy {
+        CounterDatabase.getDatabase(applicationContext)
+    }
+
+    @Composable
+    private fun counterViewModel(): CounterViewModel {
+        val counterViewModel = viewModel<CounterViewModel>(
+            factory = object : ViewModelProvider.Factory {
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    @Suppress("Unchecked")
+                    return CounterViewModel(
+                        CounterRepository(database.counterDao)
+                    ) as T
+                }
+            }
+        )
+        return counterViewModel
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
+            val counterViewModel = counterViewModel()
             CountersAppTheme {
                 // A surface container using the 'background' color from the theme
-                CounterScreen()
+                CounterScreen(counterViewModel = counterViewModel)
             }
         }
     }
 }
 
+
 @Composable
 private fun CounterScreen(
     modifier: Modifier = Modifier,
-    counterViewModel: CounterViewModel = viewModel()
+    counterViewModel: CounterViewModel = viewModel<CounterViewModel>()
 ) {
-    val counters by counterViewModel.counters.collectAsState()
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -74,7 +94,7 @@ private fun CounterScreen(
         ) {
             AddCounterRow(modifier, counterViewModel)
             Divider(thickness = 1.dp)
-            CountersColumn(modifier, counters, counterViewModel)
+            CountersColumn(modifier, counterViewModel)
         }
     }
 }
@@ -110,16 +130,15 @@ private fun AddCounterRow(
 @Composable
 private fun CountersColumn(
     modifier: Modifier,
-    counters: List<Counter>,
     counterViewModel: CounterViewModel
 ) {
+
+    val counters = counterViewModel.countersList
     LazyColumn(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(5.dp)
     ) {
-        items(
-            items = counters,
-        ) { counter ->
+        items(items = counters) { counter->
             CounterCard(modifier, counter, counterViewModel)
             Divider(
                 thickness = 2.dp,
@@ -135,14 +154,15 @@ private fun CounterCard(
     counter: Counter,
     counterViewModel: CounterViewModel
 ) {
-    var count = remember { mutableIntStateOf(counter.value) }
-    var name = remember { mutableStateOf(counter.name) }
+
     Surface(modifier = modifier) {
         Column(
             modifier = modifier.fillMaxWidth()
         ) {
             CounterCardLabelRow(
-                modifier, counter)
+                modifier,
+                counter,
+                counterViewModel)
             CounterCardButtonRow(
                 modifier = modifier,
                 counter = counter,
@@ -154,13 +174,14 @@ private fun CounterCard(
 @Composable
 private fun CounterCardLabelRow(
     modifier: Modifier = Modifier,
-    counter: Counter
+    counter: Counter,
+    counterViewModel: CounterViewModel,
 ) {
     Row(
         modifier = modifier.fillMaxWidth()
     ) {
         Text(
-            text = "${counter.name} :",
+            text = "${counter.name}",
             fontSize = 30.sp,
             modifier = modifier.weight(0.5F)
         )
@@ -184,21 +205,21 @@ private fun CounterCardButtonRow(
     ) {
         IconButton(
             modifier = modifier,
-            onClick = { counter.increment() },
+            onClick = { counterViewModel.increment(counter) },
             icon = Icons.Default.KeyboardArrowUp,
             contentDescription = "increment"
         )
         IconButton(
             modifier = modifier,
-            onClick = { counter.decrement() },
+            onClick = { counterViewModel.decrement(counter) },
             icon = Icons.Default.KeyboardArrowDown,
             contentDescription = "decrement"
         )
         IconButton(
             modifier = modifier,
-            onClick = { counter.reset() },
+            onClick = { counterViewModel.reset(counter) },
             icon = Icons.Default.Refresh,
-            contentDescription = "refresh"
+            contentDescription = "reset"
         )
         IconButton(
             modifier = modifier,
@@ -230,7 +251,7 @@ private fun IconButton(
 @Preview(showBackground = true)
 @Composable
 fun CounterScreenPreview() {
-    val counterViewModel = Counter(1, "Push-Ups")
+    val counterViewModel = Counter( "Push-Ups")
     CountersAppTheme {
         CounterScreen(counterViewModel = viewModel())
     }
