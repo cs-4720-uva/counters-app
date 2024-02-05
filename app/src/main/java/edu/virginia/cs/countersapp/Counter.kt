@@ -11,7 +11,6 @@ data class Counter(
     @ColumnInfo(name = "value") var value: Int = 0,
     @PrimaryKey(autoGenerate = true) val id: Int = 0
 ) {
-
     fun increment(amount: Int = 1) {
         value += amount
     }
@@ -22,5 +21,13 @@ data class Counter(
 
     fun reset(newValue: Int = 0) {
         value = newValue
+    }
+
+    override fun hashCode(): Int {
+        return id
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return (other is Counter) && this.id == other.id
     }
 }
