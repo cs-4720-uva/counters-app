@@ -39,7 +39,7 @@ import edu.virginia.cs.countersapp.ui.theme.CountersAppTheme
 @Composable
 fun CounterScreen(
     modifier: Modifier = Modifier,
-    counterViewModel: CounterViewModel = viewModel<CounterViewModel>()
+    counterViewModel: CounterViewModel
 ) {
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -90,7 +90,7 @@ private fun CountersColumn(
     counterViewModel: CounterViewModel
 ) {
 
-    val counters = counterViewModel.countersList
+    val counters = remember{counterViewModel.countersList}
     LazyColumn(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(5.dp)
