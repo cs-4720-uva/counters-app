@@ -100,7 +100,7 @@ private fun CountersColumn(
     counterViewModel: CounterViewModel
 ) {
 
-    val counters = remember{counterViewModel.countersList}
+    val counters = remember{ counterViewModel.countersList }
     LazyColumn(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(5.dp)

@@ -38,7 +38,8 @@ class EditCounterActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val counter = intent.getSerializableExtra(
-            "counter", Counter::class.java)!!
+            "counter", Counter::class.java
+        )!!
 
         setContent {
             CountersAppTheme {
@@ -62,12 +63,20 @@ class EditCounterActivity : ComponentActivity() {
                         onCountingHelp = {
                             val youtubeAppIntent = Intent(Intent.ACTION_VIEW)
                                 .setData(Uri.parse("vnd.youtube:HH5o4avA8aY"))
-                            val webIntent= Intent(Intent.ACTION_VIEW)
+                            val webIntent = Intent(Intent.ACTION_VIEW)
                                 .setData(Uri.parse("https://www.youtube.com/watch?v=HH5o4avA8aY"))
                             try {
                                 startActivity(youtubeAppIntent)
                             } catch (e: ActivityNotFoundException) {
                                 startActivity(webIntent)
+                            }
+                        },
+                        onAnnoyMe = { isStarted->
+                            val intent = Intent(this, AnnoyanceService::class.java)
+                            if (isStarted) {
+                                stopService(intent)
+                            } else {
+                                startService(intent)
                             }
                         }
                     )
@@ -82,9 +91,11 @@ private fun EditScreen(
     counter: Counter,
     onSave: (String) -> Unit,
     onFindTime: () -> Unit,
-    onCountingHelp: () -> Unit
+    onCountingHelp: () -> Unit,
+    onAnnoyMe: (Boolean) -> Unit
 ) {
     Column() {
+        var isStarted by remember { mutableStateOf(false) }
         val originalName = counter.name
         var textValue by remember { mutableStateOf(counter.name) }
         var valueChanged by remember { mutableStateOf(false) }
@@ -124,6 +135,19 @@ private fun EditScreen(
         {
             Text("Counting Help")
         }
+        Spacer(modifier = Modifier.height(1.dp))
+        Button(onClick = {
+            onAnnoyMe(isStarted)
+            isStarted = !isStarted
+
+        })
+        {
+            if (isStarted) {
+                Text("Stop Annoying Me")
+            } else {
+                Text("Engage Annoyance")
+            }
+        }
     }
 }
 
@@ -134,6 +158,7 @@ fun GreetingPreview() {
     CountersAppTheme {
         EditScreen(
             Counter("Preview Count"),
+            { },
             { },
             { },
             { }
