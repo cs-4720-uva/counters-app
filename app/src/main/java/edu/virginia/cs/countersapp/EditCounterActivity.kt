@@ -71,7 +71,7 @@ class EditCounterActivity : ComponentActivity() {
                                 startActivity(webIntent)
                             }
                         },
-                        onAnnoyMe = { isStarted->
+                        onAnnoyMe = { isStarted ->
                             val intent = Intent(this, AnnoyanceService::class.java)
                             if (isStarted) {
                                 stopService(intent)
