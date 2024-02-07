@@ -87,8 +87,7 @@ private fun AddCounterRow(
             CounterButton(
                 onClick = {  counterViewModel.addByName(textEntry) },
                 icon = Icons.Default.Add,
-                contentDescription = "Add new counter",
-                clickable = false
+                contentDescription = "Add new counter"
             )
         }
     }
