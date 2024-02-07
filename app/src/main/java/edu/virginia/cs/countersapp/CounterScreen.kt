@@ -24,11 +24,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -78,7 +80,8 @@ private fun AddCounterRow(
             IconButton(
                 onClick = {  counterViewModel.addByName(textEntry) },
                 icon = Icons.Default.Add,
-                contentDescription = "Add new counter"
+                contentDescription = "Add new counter",
+                clickable = false
             )
         }
     }
@@ -156,6 +159,7 @@ private fun CounterCardButtonRow(
     counter: Counter,
     counterViewModel: CounterViewModel
 ) {
+    val isDecrementPossible = counter.value > 0
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceEvenly
@@ -170,7 +174,8 @@ private fun CounterCardButtonRow(
             modifier = modifier,
             onClick = { counterViewModel.decrement(counter) },
             icon = Icons.Default.KeyboardArrowDown,
-            contentDescription = "decrement"
+            contentDescription = "decrement",
+            clickable = isDecrementPossible
         )
         IconButton(
             modifier = modifier,
@@ -192,11 +197,15 @@ private fun IconButton(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
     icon: ImageVector,
-    contentDescription: String
+    contentDescription: String,
+    clickable: Boolean = true
 ) {
     FilledTonalButton(
         onClick = onClick,
-        modifier = modifier.height(60.dp)
+        enabled = clickable,
+        modifier = modifier.height(60.dp).then(
+            if (clickable) Modifier else Modifier.alpha(0.5F)
+        )
     ) {
         Icon(
             imageVector = icon,
