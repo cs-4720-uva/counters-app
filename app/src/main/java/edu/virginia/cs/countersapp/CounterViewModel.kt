@@ -66,6 +66,13 @@ class CounterViewModel(
         }
     }
 
+    fun rename(counter: Counter, newName: String) {
+        counter.name = newName
+        viewModelScope.launch {
+            counterRepository.updateAll(counter)
+        }
+    }
+
     fun reset(counter: Counter) {
         counter.reset()
         viewModelScope.launch {

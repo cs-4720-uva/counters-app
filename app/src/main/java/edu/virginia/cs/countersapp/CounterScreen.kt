@@ -1,5 +1,10 @@
 package edu.virginia.cs.countersapp
 
+import android.app.Activity
+import android.content.Intent
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,6 +17,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Refresh
@@ -24,7 +30,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -32,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -74,10 +80,11 @@ private fun AddCounterRow(
 
             OutlinedTextField(
                 value = textEntry,
+                singleLine = true,
                 onValueChange = { newEntry -> textEntry = newEntry },
                 label = { Text("New counter") }
             )
-            IconButton(
+            CounterButton(
                 onClick = {  counterViewModel.addByName(textEntry) },
                 icon = Icons.Default.Add,
                 contentDescription = "Add new counter",
@@ -137,19 +144,38 @@ private fun CounterCardLabelRow(
     counter: Counter,
     counterViewModel: CounterViewModel,
 ) {
+    val context = LocalContext.current
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+            Log.i("DEBUG: ", "$result")
+            if (result.resultCode == Activity.RESULT_OK) {
+                val newName = result.data!!.getStringExtra("newName")!!
+                counterViewModel.rename(counter, newName)
+            }
+    }
+
     Row(
         modifier = modifier.fillMaxWidth()
     ) {
         Text(
-            text = "${counter.name}",
+            text = counter.name,
             fontSize = 30.sp,
-            modifier = modifier.weight(0.5F)
+            modifier = modifier.weight(0.45F)
         )
         Text(
             text = "${counter.value}",
             fontSize = 30.sp,
-            modifier = modifier.weight(0.5F)
+            modifier = modifier.weight(0.40F)
         )
+        CounterButton(
+            onClick = {
+                val intent = Intent(context, EditCounterActivity::class.java)
+                intent.putExtra("counter", counter)
+                launcher.launch(intent) },
+            icon = Icons.Default.Edit,
+            contentDescription = "edit name",
+            modifier = modifier.weight(0.15F))
     }
 }
 
@@ -164,26 +190,26 @@ private fun CounterCardButtonRow(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        IconButton(
+        CounterButton(
             modifier = modifier,
             onClick = { counterViewModel.increment(counter) },
             icon = Icons.Default.KeyboardArrowUp,
             contentDescription = "increment"
         )
-        IconButton(
+        CounterButton(
             modifier = modifier,
             onClick = { counterViewModel.decrement(counter) },
             icon = Icons.Default.KeyboardArrowDown,
             contentDescription = "decrement",
             clickable = isDecrementPossible
         )
-        IconButton(
+        CounterButton(
             modifier = modifier,
             onClick = { counterViewModel.reset(counter) },
             icon = Icons.Default.Refresh,
             contentDescription = "reset"
         )
-        IconButton(
+        CounterButton(
             modifier = modifier,
             onClick = { counterViewModel.remove(counter) },
             icon = Icons.Default.Delete,
@@ -193,7 +219,7 @@ private fun CounterCardButtonRow(
 }
 
 @Composable
-private fun IconButton(
+private fun CounterButton(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
     icon: ImageVector,
@@ -203,9 +229,11 @@ private fun IconButton(
     FilledTonalButton(
         onClick = onClick,
         enabled = clickable,
-        modifier = modifier.height(60.dp).then(
-            if (clickable) Modifier else Modifier.alpha(0.5F)
-        )
+        modifier = modifier
+            .height(60.dp)
+            .then(
+                if (clickable) Modifier else Modifier.alpha(0.5F)
+            )
     ) {
         Icon(
             imageVector = icon,

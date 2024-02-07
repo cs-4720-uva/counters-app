@@ -3,6 +3,7 @@ package edu.virginia.cs.countersapp
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.io.Serializable
 
 
 @Entity(tableName = "counters")
@@ -10,7 +11,7 @@ data class Counter(
     @ColumnInfo(name = "name") var name: String,
     @ColumnInfo(name = "value") var value: Int = 0,
     @PrimaryKey(autoGenerate = true) val id: Int = 0
-) {
+): Serializable {
     fun increment(amount: Int = 1) {
         value += amount
     }

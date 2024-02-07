@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">CountersApp</string>
+    <string name="title_activity_edit_counter">EditCounterActivity</string>
 </resources>
