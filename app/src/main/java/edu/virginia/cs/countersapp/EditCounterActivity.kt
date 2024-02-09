@@ -37,7 +37,7 @@ class EditCounterActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val counter = intent.getSerializableExtra(
+        val counter = intent.getParcelableExtra(
             "counter", Counter::class.java
         )!!
 
