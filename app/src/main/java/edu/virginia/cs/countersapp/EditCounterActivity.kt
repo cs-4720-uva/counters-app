@@ -1,5 +1,6 @@
 package edu.virginia.cs.countersapp
 
+import android.Manifest
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
@@ -30,9 +31,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
 import edu.virginia.cs.countersapp.ui.theme.CountersAppTheme
 
 class EditCounterActivity : ComponentActivity() {
+    var isAnnoyanceServiceRunning: Boolean = false;
+
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,6 +44,7 @@ class EditCounterActivity : ComponentActivity() {
         val counter = intent.getParcelableExtra(
             "counter", Counter::class.java
         )!!
+
 
         setContent {
             CountersAppTheme {
@@ -84,84 +89,101 @@ class EditCounterActivity : ComponentActivity() {
             }
         }
     }
-}
 
-@Composable
-private fun EditScreen(
-    counter: Counter,
-    onSave: (String) -> Unit,
-    onFindTime: () -> Unit,
-    onCountingHelp: () -> Unit,
-    onAnnoyMe: (Boolean) -> Unit
-) {
-    Column() {
-        var isStarted by remember { mutableStateOf(false) }
-        val originalName = counter.name
-        var textValue by remember { mutableStateOf(counter.name) }
-        var valueChanged by remember { mutableStateOf(false) }
-        Text(
-            text = "Rename Counter",
-            fontSize = 40.sp,
-            modifier = Modifier.fillMaxWidth()
-        )
-        Divider(thickness = 1.dp)
-        Text(
-            text = "Original Name:\n $originalName",
-            fontSize = 30.sp
-        )
-        OutlinedTextField(
-            value = textValue,
-            singleLine = true,
-            onValueChange = {
-                textValue = it
-                valueChanged = true
-            },
-            label = { Text("Counter name") }
-        )
-        FilledTonalButton(
-            onClick = {
-                onSave(textValue)
+    override fun onResume() {
+        super.onResume()
+        if (isAnnoyanceServiceRunning) {
+            val intent = Intent(this, AnnoyanceService::class.java)
+            startService(intent)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (isAnnoyanceServiceRunning) {
+            val intent = Intent(this, AnnoyanceService::class.java)
+            stopService(intent)
+        }
+    }
+
+    @Composable
+    private fun EditScreen(
+        counter: Counter,
+        onSave: (String) -> Unit,
+        onFindTime: () -> Unit,
+        onCountingHelp: () -> Unit,
+        onAnnoyMe: (Boolean) -> Unit
+    ) {
+        Column() {
+            val originalName = counter.name
+            var textValue by remember { mutableStateOf(counter.name) }
+            var valueChanged by remember { mutableStateOf(false) }
+            Text(
+                text = "Rename Counter",
+                fontSize = 40.sp,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Divider(thickness = 1.dp)
+            Text(
+                text = "Original Name:\n $originalName",
+                fontSize = 30.sp
+            )
+            OutlinedTextField(
+                value = textValue,
+                singleLine = true,
+                onValueChange = {
+                    textValue = it
+                    valueChanged = true
+                },
+                label = { Text("Counter name") }
+            )
+            FilledTonalButton(
+                onClick = {
+                    onSave(textValue)
+                }
+            ) {
+                Text(text = "Save")
             }
-        ) {
-            Text(text = "Save")
-        }
-        Spacer(modifier = Modifier.height(10.dp))
-        Button(onClick = onFindTime)
-        {
-            Text("Find Time To Count")
-        }
-        Spacer(modifier = Modifier.height(1.dp))
-        Button(onClick = onCountingHelp)
-        {
-            Text("Counting Help")
-        }
-        Spacer(modifier = Modifier.height(1.dp))
-        Button(onClick = {
-            onAnnoyMe(isStarted)
-            isStarted = !isStarted
+            Spacer(modifier = Modifier.height(10.dp))
+            Button(onClick = onFindTime)
+            {
+                Text("Find Time To Count")
+            }
+            Spacer(modifier = Modifier.height(1.dp))
+            Button(onClick = onCountingHelp)
+            {
+                Text("Counting Help")
+            }
+            Spacer(modifier = Modifier.height(1.dp))
+            Button(onClick = {
+                onAnnoyMe(isAnnoyanceServiceRunning)
+                isAnnoyanceServiceRunning = !isAnnoyanceServiceRunning
 
-        })
-        {
-            if (isStarted) {
-                Text("Stop Annoying Me")
-            } else {
-                Text("Engage Annoyance")
+            })
+            {
+                if (isAnnoyanceServiceRunning) {
+                    Text("Stop Annoying Me")
+                } else {
+                    Text("Engage Annoyance")
+                }
             }
         }
     }
-}
 
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    CountersAppTheme {
-        EditScreen(
-            Counter("Preview Count"),
-            { },
-            { },
-            { },
-            { }
-        )
+    @Preview(showBackground = true)
+    @Composable
+    fun GreetingPreview() {
+        CountersAppTheme {
+            EditScreen(
+                Counter("Preview Count"),
+                { },
+                { },
+                { },
+                { }
+            )
+        }
     }
+
 }
+

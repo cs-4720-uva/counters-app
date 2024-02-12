@@ -1,5 +1,6 @@
 package edu.virginia.cs.countersapp
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -51,6 +52,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
 import androidx.datastore.dataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -74,8 +76,6 @@ class MainActivity : ComponentActivity() {
     private lateinit var appSettings: AppSettings
     private lateinit var coroutineScope: CoroutineScope
 
-
-
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,10 +84,17 @@ class MainActivity : ComponentActivity() {
             airplaneModeReceiver,
             IntentFilter(Intent.ACTION_AIRPLANE_MODE_CHANGED)
         )
+
         registerReceiver(
             testActionReceiver,
             IntentFilter("TEST_ACTION"),
             RECEIVER_EXPORTED
+        )
+
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+            0
         )
 
         setContent {
@@ -158,10 +165,10 @@ class MainActivity : ComponentActivity() {
                 modifier = modifier
             ) {
                 Button(onClick = {
-                    coroutineScope.launch {
-                        setDarkTheme(!isDarkTheme)
-                    }
                     isDarkTheme = !isDarkTheme
+                    coroutineScope.launch {
+                        setDarkTheme(isDarkTheme)
+                    }
                 }) {
                     Text("Toggle Dark Mode")
                 }
